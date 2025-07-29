@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-white2: #edf0f6;
+  --color-lgred: #eb3f33;
+  --color-blacker: #212123;
+}
+
+@layer components {
+  .btn{
+    @apply bg-lgred hover:bg-[#9f1107] w-full max-w-md h-16 text-white text-xl rounded-xl cursor-pointer; 
+  }
+
+  .form{
+    @apply flex flex-col items-center text-center bg-white2 p-8 rounded-4xl shadow-2xl max-w-150 min-w-30 h-auto size-full
+  }
+
+  .drag-drop{
+    @apply w-[80%] h-[30%] items-center min-w-[300px] min-h-[180px] border-2 border-lgred rounded-xl p-6 sm:p-8 md:p-10 text-white text-center cursor-pointer transition
+  }
+}
+
+@utility flex-center {
+  @apply flex justify-center items-center;
+}
+
+body {
+  background-color: #232121;
+}
