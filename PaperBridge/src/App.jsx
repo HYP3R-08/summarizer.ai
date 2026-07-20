@@ -6,9 +6,6 @@ import SignIn from "./SignIn.jsx";
 import Summarizer from "./Summarizer.jsx";
 
 function App() {
-
-  
-  
   return (
     <Router>
       <Routes>
