@@ -6,6 +6,18 @@ A web app that turns long PDFs into concise, readable summaries. Sign in, upload
 
 ---
 
+## Screenshots
+
+| Home | Sign up |
+| --- | --- |
+| ![Home page](screenshots/home.png) | ![Sign up](screenshots/register.png) |
+
+| Upload a PDF | Generated summary |
+| --- | --- |
+| ![Upload a PDF](screenshots/summarizer-upload.png) | ![Generated summary](screenshots/summarizer-result.png) |
+
+---
+
 ## Features
 
 - **PDF upload & text extraction** — drop in a PDF and extract its text client-side (`react-pdftotext`, `pdfjs-dist`).
