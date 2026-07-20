@@ -93,8 +93,8 @@ The Supabase **anon key** in `supabaseClient.js` is public by design; access is 
 
 - Summary requests go through the Express proxy so the Cohere key stays server-side. When deploying, host the proxy (or port it to a serverless function) and point `VITE_API_URL` at it.
 - Row Level Security must be enabled on the `papers` and `users` tables so each user can only read their own rows.
-- Long PDFs are truncated to the first ~4000 characters before summarizing (Cohere input limit). Chunking the text would let longer documents be summarized in full.
-- The PDF library pulls a large dependency into the bundle; route-level code splitting would cut the initial load.
+- Long documents are summarized in chunks (map-reduce), capped at the first 8 chunks (~30k characters); anything beyond that is skipped and the app flags it.
+- The auth and summarizer routes are code-split, so the heavy PDF library only loads when the summarizer is opened.
 
 ---
 
