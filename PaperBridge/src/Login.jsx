@@ -1,71 +1,80 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from './supabaseClient';
-import { useState } from "react";
+import { supabase } from "./supabaseClient";
+import { useToast } from "./ui/toastContext.js";
+import Spinner from "./ui/Spinner.jsx";
 
 function Login() {
-    
     const navigate = useNavigate();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const toast = useToast();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleLogin = async () => {
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        setSubmitting(false);
 
         if (error) {
-            alert("Login failed: " + error.message);
+            toast.error("Login failed: " + error.message);
             return;
         }
 
         navigate("/summarizer");
     };
 
-    const handleSignIn = () => {
-        navigate("/register")
-    };
-
     return (
-        <div className="h-screen flex flex-col ">
-
-            <header className="text-center text-white2 font-bold text-4xl py-6 ">
-                Paperbridge
+        <div className="min-h-screen flex flex-col">
+            <header className="text-center text-white2 font-bold text-3xl sm:text-4xl py-8">
+                PaperBridge
             </header>
 
-            <main className="flex-1 flex justify-center items-center ">
-                <div className="form" style={{ transform: "translateY(-15%)" }} >
-                    <p className="mb-14 font-bold text-lgred text-[28px]">Welcome Back!</p>
+            <main className="flex-1 flex justify-center items-start pt-6 px-4">
+                <form className="form" onSubmit={handleLogin}>
+                    <p className="mb-8 font-bold text-lgred text-2xl sm:text-3xl">Welcome back</p>
 
-                    <label className="w-full text-left mb-2 text-xl ">Email:</label>
+                    <label htmlFor="login-email" className="field-label">Email</label>
                     <input
-                        type="text"
-                        placeholder="Enter the email..."
+                        id="login-email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="mb-4 p-2 border border-gray-300 rounded w-full"
+                        className="field"
+                        required
                     />
 
-                    <label className="w-full text-left mb-2 text-xl">Password:</label>
+                    <label htmlFor="login-password" className="field-label">Password</label>
                     <input
+                        id="login-password"
                         type="password"
-                        placeholder="Enter the password..."
+                        autoComplete="current-password"
+                        placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="mb-10 p-2 border border-gray-300 rounded w-full "
+                        className="field"
+                        required
                     />
 
-                    <button className="btn max-w-xs text-xl mb-12 shadow-2xl" onClick={handleLogin}>
-                        Login
+                    <button type="submit" className="btn mt-4" disabled={submitting}>
+                        {submitting ? <Spinner /> : "Log in"}
                     </button>
 
-                    <p className="text-lg mb-2">Or if you don't have an account</p>
-                    <button className="btn max-w-xs text-xl mb-2 bg-white shadow-2xl text-lgred hover:bg-[#dcd7d7]" onClick={handleSignIn}>Sign in</button>
-                </div>
+                    <p className="text-sm text-gray-500 mt-6 mb-3">Don't have an account?</p>
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => navigate("/register")}
+                    >
+                        Create one
+                    </button>
+                </form>
             </main>
         </div>
-    )
+    );
 }
 
-export default Login
+export default Login;

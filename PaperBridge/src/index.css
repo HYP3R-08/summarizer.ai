@@ -3,20 +3,61 @@
 @theme {
   --color-white2: #edf0f6;
   --color-lgred: #eb3f33;
+  --color-lgred-dark: #9f1107;
   --color-blacker: #212123;
+  --color-surface: #2b2a2a;
+  --color-surface-2: #343131;
+  --color-ink: #1b1a1a;
 }
 
 @layer components {
-  .btn{
-    @apply bg-lgred hover:bg-[#9f1107] w-full max-w-md h-16 text-white text-xl rounded-xl cursor-pointer; 
+  /* Primary action button */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 w-full max-w-md h-14
+      bg-lgred text-white text-lg font-semibold rounded-xl cursor-pointer
+      shadow-lg shadow-black/30 transition duration-200 ease-out
+      hover:bg-lgred-dark hover:-translate-y-0.5 active:translate-y-0
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lgred/60 focus-visible:ring-offset-2 focus-visible:ring-offset-blacker
+      disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0;
   }
 
-  .form{
-    @apply flex flex-col items-center text-center bg-white2 p-8 rounded-4xl shadow-2xl max-w-150 min-w-30 h-auto size-full
+  /* Secondary / light button */
+  .btn-ghost {
+    @apply bg-white2 text-lgred hover:bg-[#dcd7d7] shadow-black/20;
   }
 
-  .drag-drop{
-    @apply w-[80%] h-[30%] items-center min-w-[300px] min-h-[180px] border-2 border-lgred rounded-xl p-6 sm:p-8 md:p-10 text-white text-center cursor-pointer transition
+  /* Auth card */
+  .form {
+    @apply flex flex-col items-stretch text-center bg-white2 text-ink
+      w-full max-w-md p-8 sm:p-10 rounded-3xl shadow-2xl shadow-black/40;
+  }
+
+  /* Labelled text input */
+  .field {
+    @apply w-full mb-4 px-4 py-3 rounded-lg bg-white text-ink
+      border border-gray-300 transition
+      placeholder:text-gray-400
+      focus:outline-none focus:border-lgred focus:ring-2 focus:ring-lgred/30;
+  }
+
+  .field-label {
+    @apply w-full text-left mb-1.5 text-sm font-semibold text-gray-600;
+  }
+
+  /* Drag & drop dropzone */
+  .drag-drop {
+    @apply flex flex-col items-center justify-center gap-2 text-center
+      w-full max-w-2xl min-h-[240px] p-8 sm:p-12 rounded-2xl cursor-pointer
+      border-2 border-dashed border-white/25 bg-surface/60 text-white2
+      transition duration-200 hover:border-lgred hover:bg-surface;
+  }
+  .drag-drop.is-dragging {
+    @apply border-lgred bg-surface-2 scale-[1.01];
+  }
+
+  /* Generic dark surface card */
+  .surface-card {
+    @apply bg-surface text-white2 rounded-2xl border border-white/10 shadow-xl shadow-black/30;
   }
 }
 
@@ -24,6 +65,49 @@
   @apply flex justify-center items-center;
 }
 
+/* Spinner */
+.spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 9999px;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Toast + modal entrance animations */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-toast-in { animation: toast-in 0.22s ease-out; }
+.animate-fade-in { animation: fade-in 0.18s ease-out; }
+.animate-pop-in { animation: pop-in 0.18s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 body {
+  min-height: 100vh;
+  color: var(--color-white2);
   background-color: #232121;
+  background-image:
+    radial-gradient(60rem 60rem at 15% -10%, rgba(235, 63, 51, 0.16), transparent 60%),
+    radial-gradient(50rem 50rem at 110% 10%, rgba(235, 63, 51, 0.10), transparent 55%);
+  background-attachment: fixed;
 }

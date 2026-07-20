@@ -1,129 +1,132 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from './supabaseClient';
+import { supabase } from "./supabaseClient";
+import { useToast } from "./ui/toastContext.js";
+import Spinner from "./ui/Spinner.jsx";
 
 function SignIn() {
-
-    const [emailForm, setEmailForm] = useState('');
-    const [usernameForm, setUsernameForm] = useState('');
-    const [passwordForm, setPasswordForm] = useState('');
-    const [confirmPasswordForm, setConfirmPasswordForm] = useState('');
-    
     const navigate = useNavigate();
+    const toast = useToast();
+    const [emailForm, setEmailForm] = useState("");
+    const [usernameForm, setUsernameForm] = useState("");
+    const [passwordForm, setPasswordForm] = useState("");
+    const [confirmPasswordForm, setConfirmPasswordForm] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
-    const checkEqualPassword = async () => {
-        if(passwordForm === confirmPasswordForm && 
-            emailForm !== '' && usernameForm !== '' &&
-            passwordForm !== ''){
-                
-            const { success } = await signUp(emailForm, passwordForm);
-            if(success){
-                navigate("/summarizer");
-            }
-            
-        } else if(emailForm === '' || usernameForm === '' || passwordForm === ''){
-            alert("Please fill in all required fields.")
-        } else {
-            alert("The passwords do not match.");
+    const handleRegister = async (e) => {
+        e.preventDefault();
+
+        if (!emailForm || !usernameForm || !passwordForm) {
+            toast.error("Please fill in all required fields.");
+            return;
+        }
+        if (passwordForm !== confirmPasswordForm) {
+            toast.error("The passwords do not match.");
+            return;
+        }
+
+        setSubmitting(true);
+        const success = await signUp(emailForm, passwordForm);
+        setSubmitting(false);
+        if (success) {
+            navigate("/summarizer");
         }
     };
 
     const signUp = async (email, password) => {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-        });
+        const { data, error } = await supabase.auth.signUp({ email, password });
 
         if (error) {
-            alert(error.message);
-            return { success: false };
+            toast.error(error.message);
+            return false;
         }
-
-        const user = data.user;
 
         const { error: insertError } = await supabase
             .from("users")
-            .insert([
-                {
-                    id: user.id,
-                    email: email,
-                    username: usernameForm,
-                },
-            ]);
+            .insert([{ id: data.user.id, email, username: usernameForm }]);
 
         if (insertError) {
-            alert("Could not create your profile: " + insertError.message);
-            return { success: false };
+            toast.error("Could not create your profile: " + insertError.message);
+            return false;
         }
 
-        return { success: true };
+        return true;
     };
 
-    const handleLogin = () => {
-        navigate("/login");
-    }
-
     return (
-        <div className="h-screen flex flex-col ">
-
-            <header className="text-center text-white2 font-bold text-4xl py-6">
-                Paperbridge
+        <div className="min-h-screen flex flex-col">
+            <header className="text-center text-white2 font-bold text-3xl sm:text-4xl py-8">
+                PaperBridge
             </header>
 
-            <main className="flex-1 flex justify-center items-center ">
-                <div className="form" style={{ transform: "translateY(-5%)" }} >
-                    <p className="mb-10 font-bold text-lgred text-[28px]">Welcome!</p>
+            <main className="flex-1 flex justify-center items-start pt-2 px-4">
+                <form className="form" onSubmit={handleRegister}>
+                    <p className="mb-8 font-bold text-lgred text-2xl sm:text-3xl">Create your account</p>
 
-
-                    <label className="w-full text-left mb-2 text-xl ">e-mail:</label>
+                    <label htmlFor="signup-email" className="field-label">Email</label>
                     <input
-                        type="text"
-                        placeholder="Enter your e-mail..."
+                        id="signup-email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="you@example.com"
                         value={emailForm}
                         onChange={(e) => setEmailForm(e.target.value)}
-                        className="mb-4 p-2 border border-gray-300 rounded w-full"
+                        className="field"
+                        required
                     />
 
-                    <label className="w-full text-left mb-2 text-xl ">Username:</label>
+                    <label htmlFor="signup-username" className="field-label">Username</label>
                     <input
+                        id="signup-username"
                         type="text"
-                        placeholder="Enter the username..."
+                        autoComplete="username"
+                        placeholder="Choose a username"
                         value={usernameForm}
                         onChange={(e) => setUsernameForm(e.target.value)}
-                        className="mb-4 p-2 border border-gray-300 rounded w-full"
+                        className="field"
+                        required
                     />
 
-                    <label className="w-full text-left mb-2 text-xl">Password:</label>
+                    <label htmlFor="signup-password" className="field-label">Password</label>
                     <input
+                        id="signup-password"
                         type="password"
-                        placeholder="Enter the password..."
+                        autoComplete="new-password"
+                        placeholder="Create a password"
                         value={passwordForm}
                         onChange={(e) => setPasswordForm(e.target.value)}
-                        className="mb-10 p-2 border border-gray-300 rounded w-full "
+                        className="field"
+                        required
                     />
 
-                    <label className="w-full text-left mb-2 text-xl">Confirm Password:</label>
+                    <label htmlFor="signup-confirm" className="field-label">Confirm password</label>
                     <input
+                        id="signup-confirm"
                         type="password"
-                        placeholder="Enter the password again..."
+                        autoComplete="new-password"
+                        placeholder="Repeat your password"
                         value={confirmPasswordForm}
                         onChange={(e) => setConfirmPasswordForm(e.target.value)}
-                        className="mb-10 p-2 border border-gray-300 rounded w-full "
+                        className="field"
+                        required
                     />
 
-                    <button 
-                        className="btn max-w-xs text-xl mb-12 shadow-2xl"
-                        onClick={checkEqualPassword} >
-                        Register
+                    <button type="submit" className="btn mt-4" disabled={submitting}>
+                        {submitting ? <Spinner /> : "Register"}
                     </button>
 
-                    <p className="text-lg mb-2">Or if you already have an account</p>
-                    <button className="btn max-w-xs text-xl mb-2 bg-white shadow-2xl text-lgred hover:bg-[#dcd7d7]" onClick={handleLogin}>Login</button>
-                </div>
+                    <p className="text-sm text-gray-500 mt-6 mb-3">Already have an account?</p>
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => navigate("/login")}
+                    >
+                        Log in
+                    </button>
+                </form>
             </main>
         </div>
-    )
+    );
 }
 
 export default SignIn;
