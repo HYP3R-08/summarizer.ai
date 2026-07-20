@@ -26,4 +26,11 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // The Express proxy runs on Node, not in the browser.
+    files: ['**/server.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import Sidebar from "./Sidebar.jsx";
 
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+
 function Summarizer() {
-    const COHERE_API_KEY = import.meta.env.VITE_COHERE_API_KEY;
-    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [summaryCompleted, setSummaryCompleted] = useState(false);
     const [summary, setSummary] = useState("");
@@ -23,7 +23,6 @@ function Summarizer() {
             if (!session?.user) {
                 navigate("/login");
             } else {
-                setUser(session.user);
                 setLoading(false);
                 fetchSummaries(session.user.id);
             }
@@ -32,22 +31,20 @@ function Summarizer() {
         checkUser();
     }, [navigate]);
 
-    //function that fetches all the summarise requested by the user
-    async function fetchSummaries() {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const user = sessionData?.session?.user;
-        if (!user) return;
+    // Load every summary that belongs to the given user
+    async function fetchSummaries(userId) {
+        if (!userId) return;
 
         const { data, error } = await supabase
             .from("papers")
             .select("id, title, summary")
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .order("created_at", { ascending: false });
 
         if (!error) {
             setSummaries(data);
         } else {
-            console.error("❌ Failed to fetch summaries:", error.message);
+            console.error("Failed to fetch summaries:", error.message);
         }
     }
 
@@ -55,8 +52,7 @@ function Summarizer() {
     async function extractText(file) {
         try {
             const text = await pdfToText(file);
-            const generatedSummary = await summarizeWithCohere(text);
-            alert("✅ Riassunto completato");
+            const generatedSummary = await summarizeText(text);
 
             const title = file.name.replace(".pdf", "");
             const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -80,40 +76,33 @@ function Summarizer() {
             setSummaryCompleted(true);
 
         } catch (error) {
-            console.error("❌ Failed to extract text or summarize:", error);
-            alert("Errore durante il riassunto.");
+            console.error("Failed to extract text or summarize:", error);
+            alert("Something went wrong while summarizing the document.");
         }
     }
 
-    // function that asks the summarise to the ai and waits for a response
-    async function summarizeWithCohere(text) {
-        const response = await fetch("https://api.cohere.ai/v1/summarize", {
+    // Send the extracted text to the backend proxy, which holds the AI key and
+    // returns the generated summary.
+    async function summarizeText(text) {
+        const response = await fetch(`${API_URL}/summarize`, {
             method: "POST",
-            headers: {
-                Authorization: `Bearer ${COHERE_API_KEY}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                text: text.slice(0, 4000),
-                length: "medium",
-                format: "paragraph",
-                model: "command",
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
         });
 
         const data = await response.json();
 
-        if (data.summary) {
-            return data.summary;
-        } else {
-            throw new Error(data.message || "Errore dal server Cohere.");
+        if (!response.ok || !data.summary) {
+            throw new Error(data.error || "The summarization service returned an error.");
         }
+
+        return data.summary;
     }
 
     // function that deletes the summary by the id
     async function handleDeleteSummary(id) {
-        const confirm = window.confirm("Sei sicuro di voler eliminare questo riassunto?");
-        if (!confirm) return;
+        const confirmed = window.confirm("Are you sure you want to delete this summary?");
+        if (!confirmed) return;
 
         try {
             const { error } = await supabase.from("papers").delete().eq("id", id);
@@ -121,8 +110,8 @@ function Summarizer() {
 
             setSummaries((prev) => prev.filter((s) => s.id !== id));
         } catch (err) {
-            console.error("❌ Errore durante l'eliminazione:", err.message);
-            alert("Errore durante l'eliminazione.");
+            console.error("Failed to delete summary:", err.message);
+            alert("Something went wrong while deleting the summary.");
         }
     }
 
@@ -138,7 +127,7 @@ function Summarizer() {
     };
 
     if (loading) {
-        return <div className="p-10 text-center text-xl">🔒 Verifica accesso in corso...</div>;
+        return <div className="p-10 text-center text-xl">Checking your session...</div>;
     }
 
     const handleLogout = async () => {
