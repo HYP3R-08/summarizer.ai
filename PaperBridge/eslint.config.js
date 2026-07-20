@@ -27,8 +27,8 @@ export default defineConfig([
     },
   },
   {
-    // The Express proxy runs on Node, not in the browser.
-    files: ['**/server.js'],
+    // The Express proxy and the Vite config run on Node, not in the browser.
+    files: ['**/server.js', '**/vite.config.js'],
     languageOptions: {
       globals: globals.node,
     },
