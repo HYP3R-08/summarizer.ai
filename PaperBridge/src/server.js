@@ -17,6 +17,7 @@ const COHERE_API_KEY = process.env.COHERE_API_KEY;
 const CHUNK_SIZE = 3800;
 const MIN_CHARS = 250;
 const MAX_CHUNKS = 8;
+const COHERE_MODEL = process.env.COHERE_MODEL || 'command-r-08-2024';
 
 function chunkText(text, size) {
   const chunks = [];
@@ -27,30 +28,41 @@ function chunkText(text, size) {
 }
 
 async function cohereSummarize(text) {
-  // Too short to summarize: return it as-is rather than erroring.
+  // Too short to summarize: return it as-is rather than calling the model.
   if (text.length < MIN_CHARS) return text.trim();
 
-  const response = await fetch('https://api.cohere.ai/v1/summarize', {
+  const response = await fetch('https://api.cohere.com/v2/chat', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${COHERE_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      text,
-      length: 'medium',
-      format: 'paragraph',
-      model: 'command',
+      model: COHERE_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content:
+            'Summarize the following text in a clear, concise paragraph. ' +
+            'Return only the summary, with no preamble.\n\n' +
+            text,
+        },
+      ],
     }),
   });
 
   const data = await response.json();
 
-  if (!response.ok || !data.summary) {
+  if (!response.ok) {
     throw new Error(data.message || 'The summarization provider returned an error.');
   }
 
-  return data.summary;
+  const summary = data.message?.content?.[0]?.text;
+  if (!summary) {
+    throw new Error('The summarization provider returned an empty response.');
+  }
+
+  return summary.trim();
 }
 
 // Proxy endpoint: the browser sends the extracted text, the AI key stays here.
