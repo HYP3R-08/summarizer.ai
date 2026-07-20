@@ -10,7 +10,7 @@ function Login() {
     const [password, setPassword] = useState('');
 
     const handleLogin = async () => {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
@@ -20,21 +20,6 @@ function Login() {
             return;
         }
 
-        const userId = data.user.id;
-
-        const { data: userData, error: userError } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", userId)
-            .single();
-
-        if (userError) {
-            console.error("Errore nel recupero dell'utente:", userError);
-            alert("Utente non trovato nella tabella 'users'.");
-            return;
-        }
-
-        // Qui userData è il record unico
         navigate("/summarizer");
     };
 

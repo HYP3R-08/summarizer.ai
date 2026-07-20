@@ -1,7 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import Summarizer from "./Summarizer";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from './supabaseClient';
 
 function SignIn() {
@@ -24,9 +23,9 @@ function SignIn() {
             }
             
         } else if(emailForm === '' || usernameForm === '' || passwordForm === ''){
-            alert("You have not entered all the element required")
+            alert("Please fill in all required fields.")
         } else {
-            alert("You used different password");
+            alert("The passwords do not match.");
         }
     };
 
@@ -46,13 +45,17 @@ function SignIn() {
         const { error: insertError } = await supabase
             .from("users")
             .insert([
-            {
-                id: user.id,
-                email: email,
-                username: usernameForm,
-                password: password,
-            },
+                {
+                    id: user.id,
+                    email: email,
+                    username: usernameForm,
+                },
             ]);
+
+        if (insertError) {
+            alert("Could not create your profile: " + insertError.message);
+            return { success: false };
+        }
 
         return { success: true };
     };
