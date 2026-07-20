@@ -8,5 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  
+  server: {
+    // Honor a host-assigned port (preview/container environments) and fall
+    // back to Vite's default when none is set.
+    port: process.env.PORT ? Number(process.env.PORT) : 5173,
+  },
 })
