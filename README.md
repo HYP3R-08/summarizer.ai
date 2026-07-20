@@ -20,14 +20,14 @@ A web app that turns long PDFs into concise, readable summaries. Sign in, upload
 
 ```
 Login (Supabase Auth)
-   → upload PDF
-   → react-pdftotext extracts the text
-   → text sent to the Cohere API → summary
-   → summary saved to Supabase (papers table, per user)
-   → rendered in the app + listed in the sidebar
+   -> upload PDF
+   -> react-pdftotext extracts the text (in the browser)
+   -> text sent to the Express proxy (src/server.js) -> Cohere API -> summary
+   -> summary saved to Supabase (papers table, per user)
+   -> rendered in the app + listed in the sidebar
 ```
 
-An optional **Express** service (`src/server.js`) is included as a server-side proxy to the OpenAI API, keeping that provider's key off the client.
+The **Express** proxy (`src/server.js`) is the only place the Cohere API key lives. The browser talks to the proxy, never to Cohere directly, so the key never ends up in the client bundle.
 
 ---
 
@@ -38,8 +38,8 @@ An optional **Express** service (`src/server.js`) is included as a server-side p
 | Frontend | React 19, Vite, Tailwind CSS 4 |
 | Routing | React Router (react-router-dom 7) |
 | Auth & database | Supabase (Auth + PostgreSQL) |
-| AI | Cohere API (summaries); optional OpenAI proxy via Express |
-| PDF | react-pdftotext, pdfjs-dist, pdf-lib |
+| AI | Cohere API, called through an Express proxy that keeps the key server-side |
+| PDF | react-pdftotext (client-side text extraction) |
 
 ---
 
@@ -56,27 +56,45 @@ PaperBridge/
 │  ├─ FileUploader.jsx   # PDF upload UI
 │  ├─ Sidebar.jsx        # summary library
 │  ├─ supabaseClient.js  # Supabase client (public anon key)
-│  └─ server.js          # optional Express proxy to OpenAI
+│  └─ server.js          # Express proxy that calls the Cohere API
 └─ index.html
+```
+
+---
+
+## Running locally
+
+The app is in `PaperBridge/`. It runs as two processes: the Vite frontend and the Express proxy.
+
+```bash
+cd PaperBridge
+npm install
+cp .env.example .env   # then fill in the values
+
+npm run server         # starts the proxy on http://localhost:3001
+npm run dev            # starts the frontend (in a second terminal)
 ```
 
 ---
 
 ## Configuration
 
-The app reads its keys from environment variables (never commit real keys):
+Copy `PaperBridge/.env.example` to `PaperBridge/.env` and fill it in (never commit real keys):
 
-- `VITE_COHERE_API_KEY` — Cohere API key used by the client to generate summaries.
-- `OPENAI_KEY` — used only by the optional Express proxy (`server.js`).
+- `COHERE_API_KEY` (server) - Cohere API key used by the proxy. Not prefixed with `VITE_`, so it stays out of the client bundle.
+- `VITE_API_URL` (client) - base URL of the proxy. Defaults to `http://localhost:3001`.
+- `PORT` (server, optional) - proxy port. Defaults to `3001`.
 
-The Supabase **anon key** in `supabaseClient.js` is public by design; access is meant to be enforced server-side through Supabase **Row Level Security** policies.
+The Supabase **anon key** in `supabaseClient.js` is public by design; access is meant to be enforced through Supabase **Row Level Security** policies.
 
 ---
 
 ## Notes & future work
 
-- Calling the Cohere API directly from the browser exposes the key in the client bundle. For production, route summary requests through a server-side endpoint (like the included Express proxy) so the AI key stays private.
-- Ensure Row Level Security is enabled on the `papers` table so each user can only read their own summaries.
+- Summary requests go through the Express proxy so the Cohere key stays server-side. When deploying, host the proxy (or port it to a serverless function) and point `VITE_API_URL` at it.
+- Row Level Security must be enabled on the `papers` and `users` tables so each user can only read their own rows.
+- Long PDFs are truncated to the first ~4000 characters before summarizing (Cohere input limit). Chunking the text would let longer documents be summarized in full.
+- The PDF library pulls a large dependency into the bundle; route-level code splitting would cut the initial load.
 
 ---
 
